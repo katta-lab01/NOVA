@@ -6,10 +6,14 @@ import logging
 import random
 import time
 
+# Import MemoryCleaner
+from memory.cleaner import MemoryCleaner
+
 class RedditScraper:
     """
     Scrapes top Reddit posts from a subreddit using Reddit's public JSON API.
     Uses randomized user-agent and delays to avoid detection.
+    Can apply inline cleaning if needed.
     """
 
     USER_AGENTS = [
@@ -18,9 +22,11 @@ class RedditScraper:
         # Add more user agents
     ]
 
-    def __init__(self, min_score: int = 5, retries: int = 3):
+    def __init__(self, min_score: int = 5, retries: int = 3, clean: bool = False, min_clean_length: int = 100):
         self.min_score = min_score
         self.retries = retries
+        self.clean = clean
+        self.cleaner = MemoryCleaner(min_length=min_clean_length) if clean else None
 
     def get_random_user_agent(self):
         return random.choice(self.USER_AGENTS)
@@ -48,6 +54,10 @@ class RedditScraper:
                             chunks.append(content)
                     else:
                         chunks.append(content)
+
+                # Inline cleaning if enabled
+                if self.clean and self.cleaner:
+                    chunks = self.cleaner.filter_chunks(chunks)
 
                 time.sleep(random.uniform(1, 3))  # Random delay
                 return chunks

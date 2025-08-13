@@ -5,10 +5,14 @@ import logging
 import random
 import time
 
+# Import MemoryCleaner
+from memory.cleaner import MemoryCleaner
+
 class NewsScraper:
     """
     Scrapes news or blog articles from general websites using HTML parsing.
     Uses randomized user-agent and delays to avoid detection.
+    Can apply inline cleaning if needed.
     """
 
     USER_AGENTS = [
@@ -17,9 +21,11 @@ class NewsScraper:
         # Add more user agents
     ]
 
-    def __init__(self, min_length: int = 100, retries: int = 3):
+    def __init__(self, min_length: int = 100, retries: int = 3, clean: bool = False):
         self.min_length = min_length
         self.retries = retries
+        self.clean = clean
+        self.cleaner = MemoryCleaner(min_length=min_length) if clean else None
 
     def get_random_user_agent(self):
         return random.choice(self.USER_AGENTS)
@@ -49,6 +55,10 @@ class NewsScraper:
                                 chunks.append(text)
                         else:
                             chunks.append(text)
+
+                # Inline cleaning if enabled
+                if self.clean and self.cleaner:
+                    chunks = self.cleaner.filter_chunks(chunks)
 
                 # Random delay to mimic human browsing
                 time.sleep(random.uniform(1, 3))
